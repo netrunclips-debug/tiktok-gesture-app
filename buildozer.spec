@@ -32,9 +32,6 @@ android.archs = arm64-v8a, armeabi-v7a
 # موافقة تلقائية على تراخيص Android SDK (ضرورية في بيئات CI غير تفاعلية)
 android.accept_sdk_license = True
 
-# مهم: نحتاج نسخة كاملة من AndroidManifest لإضافة تعريف الـ Service يدويًا
-# (انظر README.md لخطوات الدمج بعد أول بناء)
-
 [buildozer]
 log_level = 2
 warn_on_root = 1
