@@ -58,7 +58,7 @@ jobs:
 
       - name: Build APK
         run: |
-          buildozer -v android debug
+          yes | buildozer -v android debug
         continue-on-error: false
 
       - name: Upload APK artifact
