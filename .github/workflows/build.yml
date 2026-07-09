@@ -8,8 +8,19 @@ on:
 jobs:
   build:
     runs-on: ubuntu-22.04
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
+
+      # مساحة القرص هي سبب شائع جدًا لفشل بناء opencv/numpy من المصدر
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /usr/local/share/boost
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+          sudo rm -rf /usr/local/lib/android
+          df -h
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -23,16 +34,31 @@ jobs:
             autoconf automake libtool libtool-bin pkg-config libltdl-dev \
             ffmpeg libsdl2-dev libsdl2-image-dev libsdl2-mixer-dev libsdl2-ttf-dev \
             libportmidi-dev libswscale-dev libavformat-dev libavcodec-dev \
-            zlib1g-dev openjdk-17-jdk unzip
+            zlib1g-dev openjdk-17-jdk unzip cmake
 
       - name: Install buildozer
         run: |
           pip3 install --user buildozer cython==0.29.36
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
+      - name: Cache buildozer global packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.buildozer
+          key: buildozer-global-${{ hashFiles('buildozer.spec') }}
+
+      - name: Cache buildozer project state
+        uses: actions/cache@v4
+        with:
+          path: .buildozer
+          key: buildozer-project-${{ hashFiles('buildozer.spec') }}
+
+      - name: Show free space before build
+        run: df -h
+
       - name: Build APK
         run: |
-          buildozer android debug
+          buildozer -v android debug
         continue-on-error: false
 
       - name: Upload APK artifact
@@ -43,10 +69,12 @@ jobs:
           path: bin/*.apk
           if-no-files-found: warn
 
-      - name: Upload build log on failure
-        if: failure()
+      - name: Upload full build log
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: build-log
-          path: .buildozer/android/platform/build-*/build.log
+          name: build-log-full
+          path: |
+            .buildozer/android/platform/build-*/build.log
+            .buildozer/buildozer.log
           if-no-files-found: ignore
